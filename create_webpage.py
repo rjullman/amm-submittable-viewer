@@ -7,50 +7,49 @@ from requests.auth import HTTPBasicAuth
 SUBMITTABLE_API_KEY = os.getenv("SUBMITTABLE_API_KEY")
 SUBMITTABLE_API_URL = 'https://api.submittable.com/v1'
 
-Submitter = namedtuple('Submitter', ['first_name', 'last_name', 'email', 'submissions', 'country'], rename = True)
-
-def load_submissions(user_email):
-    ret = []
-    page = 1
-    while True:
-        data = requests.get(SUBMITTABLE_API_URL + '/submissions?count=100&search=' + user_email,
-                            auth = HTTPBasicAuth(SUBMITTABLE_API_KEY, '')).json()
-        for item in data['items']:
-            if user_email == item['submitter']['email']:
-                numbers_in_name = [int(s) for s in item['category']['name'].split() if s.isdigit()]
-                if len(numbers_in_name) == 1:
-                    ret.append(str(numbers_in_name[0]))
-        if page == data['total_pages']:
-            ret.sort()
-            return ret
-        page += 1
+Submitter = namedtuple('Submitter', ['last_name', 'first_name', 'email', 'submissions', 'submission_count', 'country'], rename = True)
 
 def load_submitters():
-    ret = []
+    submitters = {}
     page = 1
     while True:
-        data = requests.get(SUBMITTABLE_API_URL + '/submitters?page=' + str(page),
+        data = requests.get(SUBMITTABLE_API_URL + '/submissions?count=500&page=' + str(page),
                             auth = HTTPBasicAuth(SUBMITTABLE_API_KEY, '')).json()
-        submitters = map(
-            lambda item: Submitter(
-                first_name=item['first_name'],
-                last_name=item['last_name'],
-                email=item['email'],
-                submissions=load_submissions(item['email']),
-                country=item['country']),
-            data['items'])
-        ret.extend(submitters)
+        for item in data['items']:
+            submitter_info = item['submitter']
+            numbers_in_name = [int(s) for s in item['category']['name'].split() if s.isdigit()]
+            if submitter_info['email'] not in submitters:
+                submitters[submitter_info['email']] = Submitter(
+                    first_name=submitter_info['first_name'],
+                    last_name=submitter_info['last_name'],
+                    email=submitter_info['email'],
+                    submissions=[],
+                    submission_count=0,
+                    country=submitter_info['country'])
+
+            if len(numbers_in_name) == 1:
+                submission = numbers_in_name[0]
+                submitters[submitter_info['email']].submissions.append(submission)
+                new_count = submitters[submitter_info['email']].submission_count + 1
+                submitters[submitter_info['email']] = submitters[submitter_info['email']]._replace(submission_count=new_count)
+
         if page == data['total_pages']:
+            ret = list(submitters.values())
+            for submitter in ret:
+                submitter.submissions.sort()
             return ret
+
         page += 1
 
 def format_field_as_str(field):
     if not field:
         return "--"
-    if isinstance(field, (list, tuple)):
+    if isinstance(field, (list, set, tuple)):
         arr_field = map(lambda sub_field: format_field_as_str(sub_field), field)
-        return str(len(field)) + "\t(" + ", ".join(arr_field) + ")"
-    return field.encode('utf-8')
+        return ", ".join(arr_field)
+    if isinstance(field, unicode):
+        return field.encode("utf-8")
+    return str(field)
 
 def generate_html_str(submitters):
     html = HTML('html') 
