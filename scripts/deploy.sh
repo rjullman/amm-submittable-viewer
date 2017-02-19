@@ -2,5 +2,6 @@
 
 cd "$(dirname "$0")/.."
 
-mkdir -p site
-python create_webpage.py > site/index.html
+mkdir -p build
+python create_webpage.py > build/index.html
+python index.py
