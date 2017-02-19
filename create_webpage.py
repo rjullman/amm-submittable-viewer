@@ -7,7 +7,9 @@ from requests.auth import HTTPBasicAuth
 SUBMITTABLE_API_KEY = os.getenv("SUBMITTABLE_API_KEY")
 SUBMITTABLE_API_URL = 'https://api.submittable.com/v1'
 
-Submitter = namedtuple('Submitter', ['last_name', 'first_name', 'email', 'submissions', 'submission_count', 'country'], rename = True)
+Submitter = namedtuple('Submitter',
+                       ['last_name', 'first_name', 'email', 'submissions', 'submission_count', 'country'],
+                       rename = True)
 
 def load_submitters():
     submitters = {}
@@ -42,8 +44,8 @@ def load_submitters():
         page += 1
 
 def format_field_as_str(field):
-    if not field:
-        return "--"
+    if field == None:
+        return ""
     if isinstance(field, (list, set, tuple)):
         arr_field = map(lambda sub_field: format_field_as_str(sub_field), field)
         return ", ".join(arr_field)
@@ -76,9 +78,22 @@ def generate_html_str(submitters):
                 crossorigin="anonymous")
     body.script("",
                 type="text/javascript", src="https://cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js")
+
+    column_types = ", ".join(
+        map(lambda field:
+            "{ 'type': 'num' }"
+            if format_field_as_str(submitters[0]._asdict()[field]).isdigit()
+            else "{ 'type': 'html' }",
+            Submitter._fields))
     body.script("""
                 $(document).ready(function() {
-                    $('#submitters-table').DataTable();
+                    $('#submitters-table').DataTable({
+                        "columns": [
+                """
+                + column_types +
+                """
+                        ]
+                    });
                 });
                 """)
     return html
