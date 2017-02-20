@@ -7,9 +7,55 @@ from requests.auth import HTTPBasicAuth
 SUBMITTABLE_API_KEY = os.getenv("SUBMITTABLE_API_KEY")
 SUBMITTABLE_API_URL = 'https://api.submittable.com/v1'
 
-Submitter = namedtuple('Submitter',
-                       ['last_name', 'first_name', 'email', 'solutions', 'solution_count', 'proposals', 'country'],
-                       rename = True)
+class StringType:
+    def format(self, value):
+        if isinstance(value, unicode):
+            return value.encode("utf-8")
+        return str(value)
+
+    def data_table_type(self):
+        return "html"
+
+class NumberType:
+    def format(self, value):
+        return str(value)
+
+    def data_table_type(self):
+        return "num"
+
+class ArrayType:
+    def __init__(self, value_type):
+        self.value_type = value_type
+
+    def format(self, value):
+        return ", ".join(map(lambda arr_value: self.value_type.format(arr_value), value))
+
+    def data_table_type(self):
+        return "html"
+
+class ColumnMetadata:
+    def __init__(self, field, name, type):
+        self.field = field;
+        self.name = name;
+        self.type = type;
+
+    def format(self, value):
+        return self.type.format(value)
+
+    def data_table_type(self):
+        return self.type.data_table_type()
+
+columns = [
+    ColumnMetadata("last_name",        "Last Name",         StringType()),
+    ColumnMetadata("first_name",       "First Name",        StringType()),
+    ColumnMetadata("email",            "Email",             StringType()),
+    ColumnMetadata("solutions",        "Solutions",         ArrayType(StringType())),
+    ColumnMetadata("solution_count",   "Solution Count",    NumberType()),
+    ColumnMetadata("proposals",        "Proposals",         NumberType()),
+    ColumnMetadata("country",          "Country",           StringType()),
+]
+
+Submitter = namedtuple('Submitter', map(lambda column: column.field, columns))
 
 def load_submitters():
     submitters = {}
@@ -46,17 +92,7 @@ def load_submitters():
 
         page += 1
 
-def format_field_as_str(field):
-    if field == None:
-        return ""
-    if isinstance(field, (list, set, tuple)):
-        arr_field = map(lambda sub_field: format_field_as_str(sub_field), field)
-        return ", ".join(arr_field)
-    if isinstance(field, unicode):
-        return field.encode("utf-8")
-    return str(field)
-
-def generate_html_str(submitters):
+def generate_html_str(columns, submitters):
     html = HTML('html') 
 
     head = html.head()
@@ -68,12 +104,12 @@ def generate_html_str(submitters):
 
     thead = table.thead()
     thead_tr = table.tr()
-    map(lambda field: thead_tr.td(field.replace("_", " ").title()), Submitter._fields)
+    map(lambda column: thead_tr.td(column.name), columns)
 
     tbody = table.tbody()
     for submitter in submitters:
         tr = tbody.tr()
-        map(lambda field: tr.td(format_field_as_str(submitter._asdict()[field])), Submitter._fields)
+        map(lambda column: tr.td(column.format(submitter._asdict()[column.field])), columns)
 
     body.script("",
                 src="https://code.jquery.com/jquery-1.12.4.min.js",
@@ -83,11 +119,7 @@ def generate_html_str(submitters):
                 type="text/javascript", src="https://cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js")
 
     column_types = ", ".join(
-        map(lambda field:
-            "{ 'type': 'num' }"
-            if format_field_as_str(submitters[0]._asdict()[field]).isdigit()
-            else "{ 'type': 'html' }",
-            Submitter._fields))
+        map(lambda column: "{ 'type': '" + column.data_table_type() + "' }", columns))
     body.script("""
                 $(document).ready(function() {
                     $('#submitters-table').DataTable({
@@ -101,4 +133,4 @@ def generate_html_str(submitters):
                 """)
     return html
 
-print(generate_html_str(load_submitters()))
+print(generate_html_str(columns, load_submitters()))
