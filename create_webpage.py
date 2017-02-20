@@ -9,10 +9,10 @@ SUBMITTABLE_API_KEY = os.getenv("SUBMITTABLE_API_KEY")
 SUBMITTABLE_API_URL = 'https://api.submittable.com/v1'
 
 class ColumnMetadata:
-    def __init__(self, field, name, data_table_config_str="null"):
+    def __init__(self, field, name, data_tables_config_str="null"):
         self.field = field;
         self.name = name;
-        self.data_table_config_str = data_table_config_str
+        self.data_tables_config_str = data_tables_config_str
 
     def format(self, value):
 		if value == None:
@@ -97,14 +97,14 @@ def generate_html_str(columns, submitters):
     body.script("",
                 type="text/javascript", src="https://cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js")
 
-    data_table_config = ", ".join(map(lambda column: column.data_table_config_str, columns))
+    data_tables_config = ", ".join(map(lambda column: column.data_tables_config_str, columns))
     body.script("""
                 $(document).ready(function() {
                     $('#submitters-table').DataTable({
                         "paging":  false,
                         "columns": [
                 """
-                + data_table_config +
+                + data_tables_config +
                 """
                         ]
                     });
