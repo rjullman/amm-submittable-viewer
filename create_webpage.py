@@ -28,8 +28,8 @@ columns = [
     ColumnMetadata("first_name",       "First Name"),
     ColumnMetadata("email",            "Email"), 
     ColumnMetadata("solutions",        "Submissions"),
-    ColumnMetadata("solution_count",   "# Solutions", 	"{ 'type' : 'num' }"),
-    ColumnMetadata("proposals",        "# Proposals", 	"{ 'type' : 'num' }"),
+    ColumnMetadata("solution_count",   "# Solutions", 	"{ 'type' : 'num', 'width' : '90px' }"),
+    ColumnMetadata("proposals",        "# Proposals", 	"{ 'type' : 'num', 'width' : '90px' }"),
     ColumnMetadata("country",          "Country"),
 ]
 
