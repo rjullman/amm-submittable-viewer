@@ -58,8 +58,9 @@ def load_submitters():
             submitter = submitters[submitter_info['email']]
             if len(numbers_in_name) == 1:
                 solution = numbers_in_name[0]
-                submitter.solutions.append(solution)
-                submitters[submitter_info['email']] = submitter._replace(solution_count=submitter.solution_count + 1)
+                if solution not in submitter.solutions:
+                    submitter.solutions.append(solution)
+                    submitters[submitter_info['email']] = submitter._replace(solution_count=submitter.solution_count + 1)
             else:
                 submitters[submitter_info['email']] = submitter._replace(proposals=submitter.proposals + 1)
 
