@@ -1,7 +1,8 @@
-from collections import namedtuple
-from html import HTML
 import os
 import requests
+
+from collections import namedtuple
+from html import HTML
 from requests.auth import HTTPBasicAuth
 
 SUBMITTABLE_API_KEY = os.getenv("SUBMITTABLE_API_KEY")
