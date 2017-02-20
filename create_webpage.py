@@ -1,15 +1,40 @@
-from collections import namedtuple
-from html import HTML
 import os
 import requests
+
+from collections import namedtuple
+from html import HTML
 from requests.auth import HTTPBasicAuth
 
 SUBMITTABLE_API_KEY = os.getenv("SUBMITTABLE_API_KEY")
 SUBMITTABLE_API_URL = 'https://api.submittable.com/v1'
 
-Submitter = namedtuple('Submitter',
-                       ['last_name', 'first_name', 'email', 'solutions', 'solution_count', 'proposals', 'country'],
-                       rename = True)
+class ColumnMetadata:
+    def __init__(self, field, name, data_tables_config_str="null"):
+        self.field = field;
+        self.name = name;
+        self.data_tables_config_str = data_tables_config_str
+
+    def format(self, value):
+		if value == None:
+			return ""
+		elif isinstance(value, (list, set, tuple)):
+			return ", ".join(map(lambda sub_value: self.format(sub_value), value))
+		elif isinstance(value, unicode):
+			return value.encode("utf-8")
+		else:
+			return str(value)
+
+columns = [
+    ColumnMetadata("last_name",        "Last Name") ,
+    ColumnMetadata("first_name",       "First Name"),
+    ColumnMetadata("email",            "Email"), 
+    ColumnMetadata("solutions",        "Submissions"),
+    ColumnMetadata("solution_count",   "# Solutions", 	"{ 'type' : 'num', 'width' : '90px' }"),
+    ColumnMetadata("proposals",        "# Proposals", 	"{ 'type' : 'num', 'width' : '90px' }"),
+    ColumnMetadata("country",          "Country"),
+]
+
+Submitter = namedtuple('Submitter', map(lambda column: column.field, columns))
 
 def load_submitters():
     submitters = {}
@@ -46,17 +71,7 @@ def load_submitters():
 
         page += 1
 
-def format_field_as_str(field):
-    if field == None:
-        return ""
-    if isinstance(field, (list, set, tuple)):
-        arr_field = map(lambda sub_field: format_field_as_str(sub_field), field)
-        return ", ".join(arr_field)
-    if isinstance(field, unicode):
-        return field.encode("utf-8")
-    return str(field)
-
-def generate_html_str(submitters):
+def generate_html_str(columns, submitters):
     html = HTML('html') 
 
     head = html.head()
@@ -68,12 +83,12 @@ def generate_html_str(submitters):
 
     thead = table.thead()
     thead_tr = table.tr()
-    map(lambda field: thead_tr.td(field.replace("_", " ").title()), Submitter._fields)
+    map(lambda column: thead_tr.td(column.name), columns)
 
     tbody = table.tbody()
     for submitter in submitters:
         tr = tbody.tr()
-        map(lambda field: tr.td(format_field_as_str(submitter._asdict()[field])), Submitter._fields)
+        map(lambda column: tr.td(column.format(submitter._asdict()[column.field])), columns)
 
     body.script("",
                 src="https://code.jquery.com/jquery-1.12.4.min.js",
@@ -82,18 +97,14 @@ def generate_html_str(submitters):
     body.script("",
                 type="text/javascript", src="https://cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js")
 
-    column_types = ", ".join(
-        map(lambda field:
-            "{ 'type': 'num' }"
-            if format_field_as_str(submitters[0]._asdict()[field]).isdigit()
-            else "{ 'type': 'html' }",
-            Submitter._fields))
+    data_tables_config = ", ".join(map(lambda column: column.data_tables_config_str, columns))
     body.script("""
                 $(document).ready(function() {
                     $('#submitters-table').DataTable({
+                        "paging":  false,
                         "columns": [
                 """
-                + column_types +
+                + data_tables_config +
                 """
                         ]
                     });
@@ -101,4 +112,4 @@ def generate_html_str(submitters):
                 """)
     return html
 
-print(generate_html_str(load_submitters()))
+print(generate_html_str(columns, load_submitters()))
