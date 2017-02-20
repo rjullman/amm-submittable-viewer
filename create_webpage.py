@@ -100,6 +100,7 @@ def generate_html_str(columns, submitters):
     body.script("""
                 $(document).ready(function() {
                     $('#submitters-table').DataTable({
+                        "paging":  false,
                         "columns": [
                 """
                 + data_table_config +
