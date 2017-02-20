@@ -7,41 +7,30 @@ from requests.auth import HTTPBasicAuth
 SUBMITTABLE_API_KEY = os.getenv("SUBMITTABLE_API_KEY")
 SUBMITTABLE_API_URL = 'https://api.submittable.com/v1'
 
-class StringType:
-    def format(self, value):
-        if isinstance(value, unicode):
-            return value.encode("utf-8")
-        return str(value)
-
-class NumberType:
-    def format(self, value):
-        return str(value)
-
-class ArrayType:
-    def __init__(self, value_type):
-        self.value_type = value_type
-
-    def format(self, value):
-        return ", ".join(map(lambda arr_value: self.value_type.format(arr_value), value))
-
 class ColumnMetadata:
-    def __init__(self, field, name, type, data_table_config_str="null"):
+    def __init__(self, field, name, data_table_config_str="null"):
         self.field = field;
         self.name = name;
-        self.type = type;
         self.data_table_config_str = data_table_config_str
 
     def format(self, value):
-        return self.type.format(value)
+		if value == None:
+			return ""
+		elif isinstance(value, (list, set, tuple)):
+			return ", ".join(map(lambda sub_value: self.format(sub_value), value))
+		elif isinstance(value, unicode):
+			return value.encode("utf-8")
+		else:
+			return str(value)
 
 columns = [
-    ColumnMetadata("last_name",        "Last Name",     StringType()),
-    ColumnMetadata("first_name",       "First Name",    StringType()),
-    ColumnMetadata("email",            "Email",         StringType()),
-    ColumnMetadata("solutions",        "Submissions",   ArrayType(StringType())),
-    ColumnMetadata("solution_count",   "# Solutions",   NumberType(), "{ 'type' : 'num' }"),
-    ColumnMetadata("proposals",        "# Proposals",   NumberType(), "{ 'type' : 'num' }"),
-    ColumnMetadata("country",          "Country",       StringType()),
+    ColumnMetadata("last_name",        "Last Name") ,
+    ColumnMetadata("first_name",       "First Name"),
+    ColumnMetadata("email",            "Email"), 
+    ColumnMetadata("solutions",        "Submissions"),
+    ColumnMetadata("solution_count",   "# Solutions", 	"{ 'type' : 'num' }"),
+    ColumnMetadata("proposals",        "# Proposals", 	"{ 'type' : 'num' }"),
+    ColumnMetadata("country",          "Country"),
 ]
 
 Submitter = namedtuple('Submitter', map(lambda column: column.field, columns))
