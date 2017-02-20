@@ -15,14 +15,14 @@ class ColumnMetadata:
         self.data_tables_config_str = data_tables_config_str
 
     def format(self, value):
-		if value == None:
-			return ""
-		elif isinstance(value, (list, set, tuple)):
-			return ", ".join(map(lambda sub_value: self.format(sub_value), value))
-		elif isinstance(value, unicode):
-			return value.encode("utf-8")
-		else:
-			return str(value)
+        if value == None:
+            return ""
+        elif isinstance(value, (list, set, tuple)):
+            return ", ".join(map(lambda sub_value: self.format(sub_value), value))
+        elif isinstance(value, unicode):
+            return value.encode("utf-8")
+        else:
+            return str(value)
 
 columns = [
     ColumnMetadata("last_name",        "Last Name") ,
