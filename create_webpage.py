@@ -8,7 +8,7 @@ SUBMITTABLE_API_KEY = os.getenv("SUBMITTABLE_API_KEY")
 SUBMITTABLE_API_URL = 'https://api.submittable.com/v1'
 
 Submitter = namedtuple('Submitter',
-                       ['last_name', 'first_name', 'email', 'submissions', 'submission_count', 'country'],
+                       ['last_name', 'first_name', 'email', 'solutions', 'solution_count', 'proposals', 'country'],
                        rename = True)
 
 def load_submitters():
@@ -25,20 +25,23 @@ def load_submitters():
                     first_name=submitter_info['first_name'],
                     last_name=submitter_info['last_name'],
                     email=submitter_info['email'],
-                    submissions=[],
-                    submission_count=0,
+                    solutions=[],
+                    solution_count=0,
+                    proposals=0,
                     country=submitter_info['country'])
 
+            submitter = submitters[submitter_info['email']]
             if len(numbers_in_name) == 1:
-                submission = numbers_in_name[0]
-                submitters[submitter_info['email']].submissions.append(submission)
-                new_count = submitters[submitter_info['email']].submission_count + 1
-                submitters[submitter_info['email']] = submitters[submitter_info['email']]._replace(submission_count=new_count)
+                solution = numbers_in_name[0]
+                submitter.solutions.append(solution)
+                submitters[submitter_info['email']] = submitter._replace(solution_count=submitter.solution_count + 1)
+            else:
+                submitters[submitter_info['email']] = submitter._replace(proposals=submitter.proposals + 1)
 
         if page == data['total_pages']:
             ret = list(submitters.values())
             for submitter in ret:
-                submitter.submissions.sort()
+                submitter.solutions.sort()
             return ret
 
         page += 1
