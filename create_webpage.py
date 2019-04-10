@@ -42,7 +42,7 @@ def load_submitters():
     while True:
         data = requests.get(SUBMITTABLE_API_URL + '/submissions?count=500&page=' + str(page),
                             auth = HTTPBasicAuth(SUBMITTABLE_API_KEY, '')).json()
-        for item in data['items']:
+        for item in data.get('items', []):
             submitter_info = item['submitter']
             numbers_in_name = [int(s) for s in item['category']['name'].split() if s.isdigit()]
             if submitter_info['email'] not in submitters:
@@ -64,7 +64,7 @@ def load_submitters():
             else:
                 submitters[submitter_info['email']] = submitter._replace(proposals=submitter.proposals + 1)
 
-        if page == data['total_pages']:
+        if page == data.get('total_pages', page):
             ret = list(submitters.values())
             for submitter in ret:
                 submitter.solutions.sort()
