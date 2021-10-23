@@ -2,8 +2,8 @@ import os
 import requests
 
 from collections import namedtuple
-from html import HTML
 from requests.auth import HTTPBasicAuth
+from yattag import Doc
 
 SUBMITTABLE_API_KEY = os.getenv("SUBMITTABLE_API_KEY")
 SUBMITTABLE_API_URL = 'https://api.submittable.com/v1'
@@ -19,8 +19,6 @@ class ColumnMetadata:
             return ""
         elif isinstance(value, (list, set, tuple)):
             return ", ".join(map(lambda sub_value: self.format(sub_value), value))
-        elif isinstance(value, unicode):
-            return value.encode("utf-8")
         else:
             return str(value)
 
@@ -72,45 +70,63 @@ def load_submitters():
 
         page += 1
 
+
 def generate_html_str(columns, submitters):
-    html = HTML('html') 
+    doc, tag, text = Doc().tagtext()
 
-    head = html.head()
-    head.link(rel="stylesheet", href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css")
-    head.link(rel="stylesheet", href="https://cdn.datatables.net/1.10.13/css/jquery.dataTables.min.css")
+    with tag('html'):
+        with tag('head'):
+            with tag('link', rel="stylesheet", href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"):
+                pass
+            with tag('link', rel="stylesheet", href="https://cdn.datatables.net/1.10.13/css/jquery.dataTables.min.css"):
+                pass
 
-    body = html.body(style="padding: 20px 30px 0px 30px;")
-    table = body.table(id="submitters-table", klass="table table-striped table-bordered", cellspacing="0", width="100%")
+        with tag('body', style="padding: 20px 30px 0px 30px;"):
+            with tag('table', id="submitters-table", klass="table table-striped table-bordered", cellspacing="0", width="100%"):
+                with tag('thead'):
+                    with tag('tr'):
+                        for column in columns:
+                            with tag('td'):
+                                text(column.name)
+                with tag('tbody'):
+                    for submitter in submitters:
+                        with tag('tr'):
+                            for column in columns:
+                                with tag('td'):
+                                    text(column.format(submitter._asdict()[column.field]))
 
-    thead = table.thead()
-    thead_tr = table.tr()
-    map(lambda column: thead_tr.td(column.name), columns)
+            with tag('script',
+                     src="https://code.jquery.com/jquery-1.12.4.min.js",
+                     integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=",
+                     crossorigin="anonymous"):
+                pass
 
-    tbody = table.tbody()
-    for submitter in submitters:
-        tr = tbody.tr()
-        map(lambda column: tr.td(column.format(submitter._asdict()[column.field])), columns)
+            with tag('script',
+                     src="https://code.jquery.com/jquery-1.12.4.min.js",
+                     integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=",
+                     crossorigin="anonymous"):
+                pass
 
-    body.script("",
-                src="https://code.jquery.com/jquery-1.12.4.min.js",
-                integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=",
-                crossorigin="anonymous")
-    body.script("",
-                type="text/javascript", src="https://cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js")
+            with tag('script',
+                     type="text/javascript",
+                     src="https://cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js"):
+                pass
 
-    data_tables_config = ", ".join(map(lambda column: column.data_tables_config_str, columns))
-    body.script("""
-                $(document).ready(function() {
-                    $('#submitters-table').DataTable({
-                        "paging":  false,
-                        "columns": [
-                """
-                + data_tables_config +
-                """
-                        ]
+            data_tables_config = ", ".join(map(lambda column: column.data_tables_config_str, columns))
+            with tag('script'):
+                text(
+                    """
+                    $(document).ready(function() {
+                        $('#submitters-table').DataTable({
+                            "paging":  false,
+                            "columns": [
+                    """
+                    + data_tables_config +
+                    """
+                            ]
+                        });
                     });
-                });
-                """)
-    return html
+                    """)
+    return doc.getvalue()
 
 print(generate_html_str(columns, load_submitters()))
