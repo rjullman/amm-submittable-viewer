@@ -3,8 +3,13 @@ python:
 - '3.8'
 install: pip install -r requirements.txt
 script: "./scripts/verify.sh"
+before_deploy:
+  - rvm $(travis_internal_ruby) --fuzzy do ruby -S gem install faraday -v 1.10.0
 deploy:
   provider: heroku
-  edge: true
   api_key:
-    secure: oIcacHviU8EvuPtjsasfsvMcNNB+1bTHU6vCjmvwyMgVHXrVrem3Qp2enjyAQGgvhkeaGFVFxZfhVmK1jlRyCxG1NDUH4Gd8CBSVqmA+oj/g8ItTUtkSbGbXjzNrWK9RHA+ik5G61ZXEFPjj7eVbblrkQL/evDfV9fhazyRKsTRMRIEowo1YOIH6Oe4DDK88HSAAhkxSSLhWUz/PekpGDEn68CVcLtVIs9O3RX1sIF2vRBvqiCtxATCErOBz6W7BTZyZYU/1vz2S1Ci0N2+Ph+C631oD3Lf6dzVlzpFxLgx2rAdG4zaoalmeB5xIKvTmbhKI008sxXraEYtEXsmWOprkKlqSXzKmqx1KlNMZ0O3G6hGYbys4Bs6fxzgICc066pVjDVHjGIv1F6ehE0nHnVcDn1jhzOuikevxAigv5WQZRkkySYfv6EdJuI3AWb9gngsgyNy4u8Fn+CQrbCOs3CHg3kSOOmW77OXN0xFJgLU88j0TiX8vb8q78yJVoujteE0reuT1vzhu/OVTuX8RpOtouU/fcDvkN0LO2GHzbVpj56dH3/FVD9lwCso0bCjYML9X1qPHcYYwtqpyIQWrRB2j0Ou80FmjntQ3Esi+j9qCBY3jsa5Izw8/KqcP0tkvQNU1tZKdLIXGHgScWTSeSlWn8RC+JEtQOyvgLhf8AvM=
+    secure: a6qSz+mXxHP7q4XsWLixARzCHbxC9bsACA3X+RdA0rMrIzxwj1w+RFN2wyc9TNvjqiNpFb1dTfDLdPKK2/MXjpNHiVQOUZ9EGymNoCDI8lnUtY1XMk7FGm07nK5aY4Ob26Ex5L8g39Dz16ZpKezxVKmZOsWYETQ9Ec8YQjICNcK6JJ2pBG/KhSQfj81Yejg8JNZoEeMmljzgcskKHn7Kg6IM4jRn0Zry6QNGO9M1xP5IFI/Rvr353Lt6CzDpBNpQ2i0T44qE++l86oxkdfVq8ttUGAAgpzJlGMfdEHmDytRdGBIjVPS9O98wLbT8nlGJNJ2Y6spkzEHi18QiThe9j/QQCwr9pl5DJrRgMEmFjCOFCXubl2bycN11osESa2g+TCE7OdOw+5OW9a1W8wA0Ryyfbq7kCo5tAr69f2b6nvl0I2HNsS4/3pwEh9/10Hic3ERqthTFfvE/Ho9YLZufFg9Rrwa/taHFe56/AC9pH/3+MSXTyts/t4KbpnM15X2KnDzguCNGgvl3lKjVbevRfhKS7L8aQUlIf7AJBx++4I4FeXpFujuWcjpXDvzh8DsrZksf4z7S+PPHkhHreyS2z/9vOEma/76yO6R4nm7A1FktXdj4m5w91m1ZnGbWuqhdhzxUhSf94f4eCdVqSxdyvYca0u6eAg4QtzaAHlDFqwo=
+  app: amm-submittable-viewer
+  on:
+    repo: rjullman/amm-submittable-viewer
+  skip_cleanup: 'true'
