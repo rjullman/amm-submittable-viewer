@@ -30,7 +30,7 @@ class Submitter:
         """Country name with country code."""
         if self.country_name == "--":
             return "--"
-        return f"{self.country_name} ({self.country_code})"
+        return f"{self.country_code} ({self.country_name})"
 
 
 @dataclass(frozen=True)
