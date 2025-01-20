@@ -1,0 +1,30 @@
+[project]
+name = "amm-submittable-viewer"
+version = "0.1.0"
+description = "Tool to snapshot the MAA Problem Section Submittable.com data into a webpage."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "click>=8.1.7",
+    "dominate>=2.9.1",
+    "more-itertools>=10.5.0",
+    "requests>=2.32.3",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.13.0",
+    "ruff>=0.8.3",
+    "types-requests>=2.32.0.20241016",
+]
+
+[tool.mypy]
+show_error_codes=true
+strict=true
+mypy_path=["$MYPY_CONFIG_FILE_DIR/stubs"]
+
+[tool.ruff.lint]
+select = ["D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
