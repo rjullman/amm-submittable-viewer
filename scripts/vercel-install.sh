@@ -4,5 +4,8 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # Ensure uv is on path.
 source $HOME/.local/bin/env
 
-# Install dependencies.
+# Install Python dependencies.
 uv sync --all-extras --dev
+
+# Install NPM dependencies.
+npm install
