@@ -5,4 +5,4 @@ source $HOME/.local/bin/env
 mkdir public
 
 # Build output.
-uv run snapshot.py --output-path ./public/index.html
+uv run snapshot.py --output-path ./public/index.html --limit 10
