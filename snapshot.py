@@ -343,9 +343,21 @@ def snapshot(
 
 
 @click.command("snapshot")
-@click.option("--output-path", required=True, help="XXX")
-@click.option("--api-key", required=True, envvar="SUBMITTABLE_API_KEY", help="XXX")
-@click.option("--limit", "submissions_limit", type=int, help="XXXX")
+@click.option("--output-path", required=True, help="Output path of the HTML snapshot.")
+@click.option(
+    "--api-key",
+    required=True,
+    envvar="SUBMITTABLE_API_KEY",
+    help="The Submittable API key. It is recommended to pass it as an "
+    "environment variable to avoid leaking it in command line history.",
+)
+@click.option(
+    "--limit",
+    "submissions_limit",
+    type=int,
+    help="Limit the number of submissions fetched. "
+    "This can speed up generating the snapshot when testing.",
+)
 def run_snapshot(output_path: str, api_key: str, submissions_limit: int | None) -> None:
     """Snapshot Submittable metadata into a webpage.
 
