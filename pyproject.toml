@@ -7,6 +7,8 @@ requires-python = ">=3.10"
 dependencies = [
     "click>=8.1.7",
     "dominate>=2.9.1",
+    "flask-basicauth>=0.2.0",
+    "flask>=3.1.0",
     "more-itertools>=10.5.0",
     "requests>=2.32.3",
 ]
