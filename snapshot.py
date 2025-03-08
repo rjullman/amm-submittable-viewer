@@ -1,11 +1,15 @@
 """Command line interface to snapshot AMM submission data from Submittable."""
 
+import os
+import threading
 from dataclasses import dataclass
 from typing import Sequence
 
 import click
 import dominate
 import dominate.util
+import flask
+import flask_basicauth  # ignore: import-untyped
 import requests
 from dominate import tags
 from more_itertools import chunked
@@ -13,6 +17,11 @@ from more_itertools import chunked
 SUBMITTABLE_API_URL = "https://submittable-api.submittable.com/v4"
 ACCEPTED_SUBMISSION_STATUS = "accepted"
 GDPR_DELETED_USER_ID = "98afae20-acd1-440c-ae2e-3716821f6024"
+
+FLASK_APP_NAME = "submittable-viewer"
+DEFAULT_SERVE_HOST = "127.0.0.1"
+DEFAULT_SERVE_PORT = 5000
+DEFAULT_SERVE_REFRESH_EVERY_SECONDS = 60 * 60 * 24  # Seconds in a day.
 
 
 @dataclass(frozen=True)
@@ -358,19 +367,126 @@ def snapshot(
     help="Limit the number of submissions fetched. "
     "This can speed up generating the snapshot when testing.",
 )
-def run_snapshot(output_path: str, api_key: str, submissions_limit: int | None) -> None:
-    """Snapshot Submittable metadata into a webpage.
+@click.option(
+    "--serve",
+    is_flag=True,
+    help="When provided, starts a webserver to serve the snapshot.",
+)
+@click.option(
+    "--serve-host",
+    type=str,
+    default=DEFAULT_SERVE_HOST,
+    help="The webserver host name.",
+)
+@click.option(
+    "--serve-port",
+    type=int,
+    default=DEFAULT_SERVE_PORT,
+    help="The webserver port.",
+)
+@click.option(
+    "--serve-auth",
+    type=str,
+    envvar="SNAPSHOT_SERVE_AUTH",
+    help="The colon-separated username/password used for the webserver basic auth.",
+)
+@click.option(
+    "--serve-refresh-every",
+    "serve_refresh_every_seconds",
+    type=int,
+    default=DEFAULT_SERVE_REFRESH_EVERY_SECONDS,
+    help="The number of seconds to wait before regenerating the served snapshot.",
+)
+def run_snapshot(
+    output_path: str,
+    api_key: str,
+    submissions_limit: int | None,
+    serve: bool,
+    serve_host: str,
+    serve_port: int,
+    serve_auth: str,
+    serve_refresh_every_seconds: int,
+) -> None:
+    """Snapshot Submittable metadata into a webpage."""
+
+    def _snapshot() -> None:
+        snapshot(
+            output_path=output_path,
+            api_key=api_key,
+            submissions_limit=submissions_limit,
+        )
+
+    # Make one-time snapshot.
+    if not serve:
+        _snapshot()
+
+    # Otherwise generated and serve snapshot continually.
+    else:
+        # Start hosting server.
+        thread = threading.Thread(
+            target=host_snapshot,
+            kwargs={
+                "snapshot_path": output_path,
+                "host": serve_host,
+                "port": serve_port,
+                "auth": serve_auth,
+            },
+        )
+        thread.start()
+
+        # Refresh snapshot.
+        while thread.is_alive():
+            print("Refreshing submittable snapshot...")
+            _snapshot()
+            print(
+                f"Waiting {serve_refresh_every_seconds} seconds before next snapshot..."
+            )
+            thread.join(serve_refresh_every_seconds)
+
+
+def host_snapshot(
+    *,
+    snapshot_path: str,
+    host: str,
+    port: int,
+    auth: str | None,
+) -> None:
+    """Start Flask App hosting given snapshot file.
 
     Args:
-      output_path: Output path for snapshot webpage (html file).
-      api_key: Submittable.com API key.
-      submissions_limit: The number of submissions to limit the snapshot to (useful for testing).
+      snapshot_path: Path to the file to host.
+      host: Name of the server host.
+      port: Name of the server port.
+      auth: Optional colon-separated username and password string.
     """
-    snapshot(
-        output_path=output_path,
-        api_key=api_key,
-        submissions_limit=submissions_limit,
-    )
+    app = flask.Flask(FLASK_APP_NAME)
+
+    def _split_username_and_password_string(
+        username_and_password: str,
+    ) -> tuple[str, str]:
+        """Splits colon separated username and password string."""
+        # If string contains colon interpret as '<username>:<password>'.
+        if ":" in username_and_password:
+            username, password = username_and_password.split(":", 1)
+            return username, password
+        # Otherwise interpert as '<username>' with no password.
+        return username_and_password, ""
+
+    # Require BasicAuth if auth username/password is given.
+    if auth is not None:
+        username, password = _split_username_and_password_string(auth)
+        app.config["BASIC_AUTH_USERNAME"] = username
+        app.config["BASIC_AUTH_PASSWORD"] = password
+        app.config["BASIC_AUTH_FORCE"] = True
+        basic_auth = flask_basicauth.BasicAuth(app)
+
+    snapshot_dir, snapshot_filename = os.path.split(snapshot_path)
+
+    @app.route("/")
+    def index() -> flask.Response:
+        return flask.send_from_directory(snapshot_dir, snapshot_filename)
+
+    app.run(host=host, port=port)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,3 @@
+from flask import Flask
+
+def BasicAuth(flask_app: Flask) -> Flask: ...
