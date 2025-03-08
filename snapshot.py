@@ -391,6 +391,10 @@ def snapshot(
     help="The colon-separated username/password used for the webserver basic auth.",
 )
 @click.option(
+    "--serve-https/--serve-http",
+    help="Server the webpage using ssl (https connection) or not (http connection).",
+)
+@click.option(
     "--serve-refresh-every",
     "serve_refresh_every_seconds",
     type=int,
@@ -406,6 +410,7 @@ def run_snapshot(
     serve_port: int,
     serve_auth: str,
     serve_refresh_every_seconds: int,
+    serve_https: bool,
 ) -> None:
     """Snapshot Submittable metadata into a webpage."""
 
@@ -430,6 +435,7 @@ def run_snapshot(
                 "host": serve_host,
                 "port": serve_port,
                 "auth": serve_auth,
+                "ssl": serve_https,
             },
         )
         thread.start()
@@ -450,6 +456,7 @@ def host_snapshot(
     host: str,
     port: int,
     auth: str | None,
+    ssl: bool,
 ) -> None:
     """Start Flask App hosting given snapshot file.
 
@@ -458,6 +465,7 @@ def host_snapshot(
       host: Name of the server host.
       port: Name of the server port.
       auth: Optional colon-separated username and password string.
+      ssl: When True, use SSL (https connection) overwise use http connection.
     """
     app = flask.Flask(FLASK_APP_NAME)
 
@@ -486,7 +494,7 @@ def host_snapshot(
     def index() -> flask.Response:
         return flask.send_from_directory(snapshot_dir, snapshot_filename)
 
-    app.run(host=host, port=port)
+    app.run(host=host, port=port, ssl_context="adhoc" if ssl else None)
 
 
 if __name__ == "__main__":
