@@ -3,6 +3,7 @@
 import os
 import threading
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Sequence
 
 import click
@@ -232,7 +233,7 @@ def _generate_webpage(
 
     with doc:
         with tags.div(
-            style="padding: 20px 30px 0px 30px;",
+            style="padding: 20px 30px 20px 30px;",
         ):
             with tags.table(
                 id="submitters-table",
@@ -260,6 +261,12 @@ def _generate_webpage(
                             tags.td(
                                 f"{stats.accepted_solutions_count} of {stats.submitted_solutions_count}"
                             )
+
+            tags.div(
+                f"Last updated on {datetime.now(timezone.utc).strftime('%b %-d, %Y at %H:%M UTC')}",
+                klass="border-top pt-2 text-muted small",
+                style="opacity: 0.75;",
+            )
 
         tags.script(
             src="https://code.jquery.com/jquery-1.12.4.min.js",
