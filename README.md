@@ -9,12 +9,7 @@ the committee.
 
 ## Building the Dashboard
 
-1. Setup the Python environment:
-```
-python3 -m venv env
-source env/bin/activate
-pip install -r requirements.txt
-```
+1. If needed [install uv](https://docs.astral.sh/uv/getting-started/installation/).
 
 2. Generate the dashboard:
 
